@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+#
+# (c) 2017-2020 Fetal-Neonatal Neuroimaging & Developmental Science Center
+#                   Boston Children's Hospital
+#
+#              http://childrenshospital.org/FNNDSC/
+#                        dev@babyMRI.org
+#
+
+import sys
+import os
+from argparse import ArgumentParser
+
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), '..'))
+
+from pfconclient import client
+
+
+parser = ArgumentParser(description='Manage pfcon service resources')
+parser.add_argument('url', help="url of pfcon service")
+parser.add_argument('-u', '--username', help="username for pfcon service")
+parser.add_argument('-p', '--password', help="password for pfcon service")
+parser.add_argument('--timeout', help="requests' timeout")
+
+# Parse the arguments and perform the appropriate action with the client
+args = parser.parse_args()
+if args.timeout:
+    client = client.Client(args.url, args.username, args.password, args.timeout)
+else:
+    client = client.Client(args.url, args.username, args.password)
