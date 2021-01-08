@@ -23,7 +23,7 @@ class Client(object):
 
         # initial and maximum wait time (seconds) for exponetial-backoff-based retries
         self.initial_wait = 2
-        self.max_wait = 2**16
+        self.max_wait = 2**15
 
     def run_job(self, job_id, d_job_descriptors, input_dir, output_dir, timeout=1000):
         """
@@ -34,7 +34,7 @@ class Client(object):
         job_zip_file = self.create_zip_file(input_dir)
         zip_content = job_zip_file.getvalue()
 
-        print('Submitting job %s to pfcon service at -->%s<--...\n' % (job_id, self.url))
+        print('\nSubmitting job %s to pfcon service at -->%s<--...' % (job_id, self.url))
         self.submit_job(job_id, d_job_descriptors, zip_content, timeout)
 
         # poll for job's execution status using exponential backoff retries
@@ -74,6 +74,7 @@ class Client(object):
         poll_num = 1
         l_status = []
         while self.max_wait >= wait_time:
+            print('Waiting for %ss before next polling for job status ...\n' % wait_time)
             time.sleep(wait_time)
             print('Polling job %s status, poll number: %s' % (job_id, poll_num))
             d_resp = self.get_job_status(job_id, timeout)
@@ -84,7 +85,6 @@ class Client(object):
             else:
                 wait_time = self.initial_wait * 2 ** poll_num
                 poll_num += 1
-                print('Waiting for %s seconds before the next poll...\n' % wait_time)
         return l_status
 
     def get_job_zip_data(self, job_id, timeout=1000):

@@ -57,7 +57,7 @@ parser_run.add_argument('--poll_max_wait',
 # create the parser for the "submit" command
 parser_submit = subparsers.add_parser('submit', help='submit a new job')
 parser_submit.add_argument('inputdir', help="job input directory")
-submit_group = parser_run.add_argument_group('required job API parameters')
+submit_group = parser_submit.add_argument_group('required job API parameters')
 submit_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
 submit_group.add_argument('--auid', help='user id', required=True)
 submit_group.add_argument('--number_of_workers', help='number of workers', required=True)
@@ -92,7 +92,7 @@ parser_poll.add_argument('--poll_max_wait',
 parser_download = subparsers.add_parser('download',
                                         help="download job's output files")
 parser_download.add_argument('outputdir', help="directory to download job's output files")
-parser_download.add_argument('--zip', type=bool, default=False,
+parser_download.add_argument('--zip', action='store_true',
                              help='save output files as a single zip file')
 
 # parse the arguments and perform the appropriate action with the client
@@ -127,7 +127,9 @@ if args.subparser_name == 'run' or args.subparser_name == 'submit':
         zip_content = job_zip_file.getvalue()
         client.submit_job(args.jid, d_job_descriptors, zip_content, timeout)
 elif args.subparser_name == 'status':
-    client.get_job_status(args.jid, timeout)
+    d_resp = client.get_job_status(args.jid, timeout)
+    l_status = d_resp['compute']['d_ret']['l_status']
+    print('\nJob %s status: %s' % (args.jid, l_status))
 elif args.subparser_name == 'poll':
     if args.poll_initial_wait:
         client.initial_wait = args.poll_initial_wait
