@@ -30,25 +30,29 @@ subparsers = parser.add_subparsers(dest='subparser_name', title='subcommands',
 parser_run = subparsers.add_parser('run', help='run a new job until finished')
 parser_run.add_argument('inputdir', help="job input directory")
 parser_run.add_argument('outputdir', help="job output directory")
-run_group = parser_run.add_argument_group('required job API parameters')
-run_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
-run_group.add_argument('--auid', help='user id', required=True)
-run_group.add_argument('--number_of_workers', help='number of workers',
+run_req_group = parser_run.add_argument_group('required job API parameters')
+run_req_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
+run_req_group.add_argument('--auid', help='user id', required=True)
+run_req_group.add_argument('--number_of_workers', help='number of workers',
                               required=True)
-run_group.add_argument('--cpu_limit', help='cpu limit', required=True)
-run_group.add_argument('--memory_limit', help='memory limit', required=True)
-run_group.add_argument('--gpu_limit', help='gpu limit', required=True)
-run_group.add_argument('--image', help='docker image', required=True)
-run_group.add_argument('--selfexec',
-                       help='executable file name within the docker image',
-                       required=True)
-run_group.add_argument('--selfpath',
-                       help='path to executable file within the docker image',
-                       required=True)
-run_group.add_argument('--execshell',
-                       help='execution shell within the docker image',
-                       required=True)
-run_group.add_argument('--type', help='plugin type', choices=['fs', 'ds'], required=True)
+run_req_group.add_argument('--cpu_limit', help='cpu limit', required=True)
+run_req_group.add_argument('--memory_limit', help='memory limit', required=True)
+run_req_group.add_argument('--gpu_limit', help='gpu limit', required=True)
+run_req_group.add_argument('--image', help='docker image', required=True)
+run_req_group.add_argument('--selfexec',
+                           help='executable file name within the docker image',
+                           required=True)
+run_req_group.add_argument('--selfpath',
+                           help='path to executable file within the docker image',
+                           required=True)
+run_req_group.add_argument('--execshell',
+                           help='execution shell within the docker image',
+                           required=True)
+run_req_group.add_argument('--type', help='plugin type', choices=['fs', 'ds'],
+                           required=True)
+run_opt_group = parser_run.add_argument_group('optional job API parameters')
+run_opt_group.add_argument('--cmd_path_flags',
+                           help='comma separated list of cmd flags with path argument')
 parser_run.add_argument('--poll_initial_wait',
                         help='initial wait time in seconds to poll for job status')
 parser_run.add_argument('--poll_max_wait',
@@ -57,25 +61,28 @@ parser_run.add_argument('--poll_max_wait',
 # create the parser for the "submit" command
 parser_submit = subparsers.add_parser('submit', help='submit a new job')
 parser_submit.add_argument('inputdir', help="job input directory")
-submit_group = parser_submit.add_argument_group('required job API parameters')
-submit_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
-submit_group.add_argument('--auid', help='user id', required=True)
-submit_group.add_argument('--number_of_workers', help='number of workers', required=True)
-submit_group.add_argument('--cpu_limit', help='cpu limit', required=True)
-submit_group.add_argument('--memory_limit', help='memory limit', required=True)
-submit_group.add_argument('--gpu_limit', help='gpu limit', required=True)
-submit_group.add_argument('--image', help='docker image', required=True)
-submit_group.add_argument('--selfexec',
-                          help='executable file name within the docker image',
-                          required=True)
-submit_group.add_argument('--selfpath',
-                          help='path to executable file within the docker image',
-                          required=True)
-submit_group.add_argument('--execshell',
-                          help='execution shell within the docker image',
-                          required=True)
-submit_group.add_argument('--type', help='plugin type', choices=['fs', 'ds'],
-                          required=True)
+submit_req_group = parser_submit.add_argument_group('required job API parameters')
+submit_req_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
+submit_req_group.add_argument('--auid', help='user id', required=True)
+submit_req_group.add_argument('--number_of_workers', help='number of workers', required=True)
+submit_req_group.add_argument('--cpu_limit', help='cpu limit', required=True)
+submit_req_group.add_argument('--memory_limit', help='memory limit', required=True)
+submit_req_group.add_argument('--gpu_limit', help='gpu limit', required=True)
+submit_req_group.add_argument('--image', help='docker image', required=True)
+submit_req_group.add_argument('--selfexec',
+                              help='executable file name within the docker image',
+                              required=True)
+submit_req_group.add_argument('--selfpath',
+                              help='path to executable file within the docker image',
+                              required=True)
+submit_req_group.add_argument('--execshell',
+                              help='execution shell within the docker image',
+                              required=True)
+submit_req_group.add_argument('--type', help='plugin type', choices=['fs', 'ds'],
+                              required=True)
+submit_opt_group = parser_submit.add_argument_group('optional job API parameters')
+submit_opt_group.add_argument('--cmd_path_flags',
+                              help='comma separated list of cmd flags with path argument')
 
 # create the parser for the "status" command
 parser_status = subparsers.add_parser('status', help='get the exec status of a job')
@@ -103,6 +110,7 @@ client = client.Client(args.url, args.username, args.password)
 if args.subparser_name == 'run' or args.subparser_name == 'submit':
     d_job_descriptors = {
         'cmd_args': args.cmd_args,
+        'cmd_path_flags': args.cmd_path_flags if args.cmd_path_flags is not None else '',
         'auid': args.auid,
         'number_of_workers': args.number_of_workers,
         'cpu_limit': args.cpu_limit,

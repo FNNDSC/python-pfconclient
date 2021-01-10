@@ -26,8 +26,8 @@ Run ``fs`` plugin until finished and get the resulting files in a local director
 
 .. code-block:: bash
 
-    pfconclient http://localhost:5006/api/v1/ chris-jid-1 run --cmd_args '--saveinputmeta --saveoutputmeta path:--dir cube/uploads'
-    --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp
+    pfconclient http://localhost:5006/api/v1/ chris-jid-1 run --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads'
+    --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp
     --selfexec simplefsapp.py --selfpath /usr/src/simplefsapp --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-1
 
 
@@ -47,8 +47,8 @@ Submit ``fs`` plugin for execution:
 
 .. code-block:: bash
 
-    pfconclient http://localhost:5006/api/v1/ chris-jid-3 submit --cmd_args '--saveinputmeta --saveoutputmeta path:--dir cube/uploads'
-    --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp
+    pfconclient http://localhost:5006/api/v1/ chris-jid-3 submit --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads'
+    --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp
     --selfexec simplefsapp.py --selfpath /usr/src/simplefsapp --execshell python3 --type fs /tmp/sbin/in
 
 
