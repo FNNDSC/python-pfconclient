@@ -84,7 +84,7 @@ Run ``fs`` plugin until finished using any local input directory and get the res
 
     job_descriptors = {
         'cmd_args': '--saveinputmeta --saveoutputmeta --dir cube/uploads',
-        'cmd_path_flags': '--dir',
+        'cmd_path_flags': '--dir',  # comma separated list of flags with arguments of type 'path' or 'unextpath'
         'auid': 'cube',
         'number_of_workers': 1,
         'cpu_limit': 1000,
@@ -151,6 +151,14 @@ Run ``ds`` plugin until finished using the local output directory of a previous 
 Visit the `standalone CLI client`_ wiki page to learn more about the CLI client.
 
 .. _`standalone CLI client`: https://github.com/FNNDSC/python-pfconclient/wiki/Standalone-CLI-client-tool
+
+
+Arguments of type ``path`` or ``unextpath``
+===========================================
+
+If a plugin's ``cmd_args`` string contains flags with arguments of type ``path`` or ``unextpath`` then those flags should be included
+in the optional ``cmd_path_flags`` string. This string represents a comma separated list of flags. This way ``pfcon`` server will
+know that it has to substitute the local path specified by the flag by an actual path in the cloud.
 
 
 Development and testing
