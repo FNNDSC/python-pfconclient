@@ -21,7 +21,7 @@ class Client(object):
         self.username = username
         self.password = password
 
-        # initial and maximum wait time (seconds) for exponetial-backoff-based retries
+        # initial and maximum wait time (seconds) for exponential-backoff-based retries
         self.initial_wait = 2
         self.max_wait = 2**15
 
