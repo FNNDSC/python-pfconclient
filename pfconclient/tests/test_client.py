@@ -1,5 +1,4 @@
 
-
 import io
 import zipfile
 import random
@@ -33,8 +32,8 @@ class ClientTests(TestCase):
             'memory_limit': 200,
             'gpu_limit': 0,
             'image': 'fnndsc/pl-simplefsapp',
-            'selfexec': 'simplefsapp.py',
-            'selfpath': '/usr/src/simplefsapp',
+            'selfexec': 'simplefsapp',
+            'selfpath': '/usr/local/bin',
             'execshell': 'python3',
             'type': 'fs'}
         self.job_descriptors = job_descriptors.copy()
@@ -70,7 +69,7 @@ class ClientTests(TestCase):
 
         # call submit_job method
         resp_data = self.client.submit_job(job_id, self.job_descriptors, zip_content)
-        self.assertIn('pushData', resp_data)
+        self.assertIn('data', resp_data)
         self.assertIn('compute', resp_data)
 
     def test_get_job_status(self):
@@ -104,8 +103,7 @@ class ClientTests(TestCase):
         resp_data = self.client.get_job_status(job_id)
 
         self.assertIn('compute', resp_data)
-        self.assertIn('d_ret', resp_data['compute'])
-        self.assertIn('l_status', resp_data['compute']['d_ret'])
+        self.assertIn('status', resp_data['compute'])
 
     def test_get_job_zip_data(self):
         """

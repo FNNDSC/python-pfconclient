@@ -91,8 +91,8 @@ Run ``fs`` plugin until finished using any local input directory and get the res
         'memory_limit': 200,
         'gpu_limit': 0,
         'image': 'fnndsc/pl-simplefsapp',
-        'selfexec': 'simplefsapp.py',
-        'selfpath': '/usr/src/simplefsapp',
+        'selfexec': 'simplefsapp',
+        'selfpath': '/usr/local/bin',
         'execshell': 'python3',
         'type': 'fs'
     }
@@ -113,8 +113,8 @@ Run ``ds`` plugin until finished using the local output directory of a previous 
         'memory_limit': 200,
         'gpu_limit': 0,
         'image': 'fnndsc/pl-simpledsapp',
-        'selfexec': 'simpledsapp.py',
-        'selfpath': '/usr/src/simpledsapp',
+        'selfexec': 'simpledsapp',
+        'selfpath': '/usr/local/bin',
         'execshell': 'python3',
         'type': 'ds'
     }
@@ -135,18 +135,14 @@ Run ``fs`` plugin until finished using any local input directory and get the res
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:5006/api/v1/ chris-jid-3 run --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads'
-       --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp
-       --selfexec simplefsapp.py --selfpath /usr/src/simplefsapp --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
+    $> pfconclient http://localhost:5006/api/v1/ chris-jid-3 run --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads' --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp --selfexec simplefsapp --selfpath /usr/local/bin --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
 
 
 Run ``ds`` plugin until finished using the local output directory of a previous plugin as its input directory and get the resulting files in a local output directory:
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:5006/api/v1/ chris-jid-4 run --cmd_args '--saveinputmeta --saveoutputmeta --prefix lolo'
-       --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp
-       --selfexec simpledsapp.py --selfpath /usr/src/simpledsapp --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
+    $> pfconclient http://localhost:5006/api/v1/ chris-jid-4 run --cmd_args '--saveinputmeta --saveoutputmeta --prefix lolo' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --selfexec simpledsapp --selfpath /usr/local/bin --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
 
 Visit the `standalone CLI client`_ wiki page to learn more about the CLI client.
 

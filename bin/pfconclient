@@ -136,8 +136,8 @@ if args.subparser_name == 'run' or args.subparser_name == 'submit':
         client.submit_job(args.jid, d_job_descriptors, zip_content, timeout)
 elif args.subparser_name == 'status':
     d_resp = client.get_job_status(args.jid, timeout)
-    l_status = d_resp['compute']['d_ret']['l_status']
-    print('\nJob %s status: %s' % (args.jid, l_status))
+    status = d_resp['compute']['status']
+    print('\nJob %s status: %s' % (args.jid, status))
 elif args.subparser_name == 'poll':
     if args.poll_initial_wait:
         client.initial_wait = args.poll_initial_wait

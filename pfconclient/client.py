@@ -34,20 +34,20 @@ class Client(object):
         job_zip_file = self.create_zip_file(input_dir)
         zip_content = job_zip_file.getvalue()
 
-        print('\nSubmitting job %s to pfcon service at -->%s<--...' % (job_id, self.url))
+        print(f'\nSubmitting job {job_id} to pfcon service at -->{self.url}<--...')
         self.submit_job(job_id, d_job_descriptors, zip_content, timeout)
 
         # poll for job's execution status using exponential backoff retries
-        l_status = self.poll_job_status(job_id, timeout)
-        if 'finishedSuccessfully' in l_status:
-            print('Downloading and unpacking job %s files...' % job_id)
+        status = self.poll_job_status(job_id, timeout)
+        if status == 'finishedSuccessfully':
+            print(f'Downloading and unpacking job {job_id} files...')
             self.get_job_files(job_id, output_dir, timeout)
             print('Done')
-        elif 'finishedWithError' in l_status:
-            print('Job %s finished with errors' % job_id)
+        elif status == 'finishedWithError':
+            print(f'Job {job_id} finished with errors')
         else:
-            print('Job %s finished with unexpected status: %s' % (job_id, l_status))
-        return l_status
+            print(f'Job {job_id} finished with unexpected status: {status}')
+        return status
 
     def submit_job(self, job_id, d_job_descriptors, data_file, timeout=1000):
         """
@@ -67,25 +67,25 @@ class Client(object):
 
     def poll_job_status(self, job_id, timeout=1000):
         """
-        Poll for a job's execution status until 'finishedSuccessfully' or
+        Poll for a job's execution status until 'undefined', 'finishedSuccessfully' or
         'finishedWithError'.
         """
         wait_time = self.initial_wait
         poll_num = 1
-        l_status = []
+        status = 'undefined'
         while self.max_wait >= wait_time:
-            print('Waiting for %ss before next polling for job status ...\n' % wait_time)
+            print(f'Waiting for {wait_time}s before next polling for job status ...\n')
             time.sleep(wait_time)
-            print('Polling job %s status, poll number: %s' % (job_id, poll_num))
+            print(f'Polling job {job_id} status, poll number: {poll_num}')
             d_resp = self.get_job_status(job_id, timeout)
-            l_status = d_resp['compute']['d_ret']['l_status']
-            print('Job %s status: %s' % (job_id, l_status))
-            if ('finishedSuccessfully' in l_status) or ('finishedWithError' in l_status):
+            status = d_resp['compute']['status']
+            print(f'Job {job_id} status: {status}')
+            if status in ('undefined', 'finishedSuccessfully', 'finishedWithError'):
                 break
             else:
                 wait_time = self.initial_wait * 2 ** poll_num
                 poll_num += 1
-        return l_status
+        return status
 
     def get_job_zip_data(self, job_id, timeout=1000):
         """
@@ -115,7 +115,7 @@ class Client(object):
         memory_zip_file = io.BytesIO(zip_content)
         with zipfile.ZipFile(memory_zip_file, 'r', zipfile.ZIP_DEFLATED) as job_data_zip:
             filenames = job_data_zip.namelist()
-            print('Number of files to decompress at %s: %s' % (local_dir, len(filenames)))
+            print(f'Number of files to decompress at {local_dir}: {len(filenames)}')
             for fname in filenames:
                 content = job_data_zip.read(fname)
                 fpath = os.path.join(local_dir, fname.lstrip('/'))
@@ -197,7 +197,7 @@ class Client(object):
         Create job zip file ready for transmission to the remote from a local directory.
         """
         if not os.path.isdir(local_dir):
-            raise ValueError('Invalid local input dir: %s' % local_dir)
+            raise ValueError(f'Invalid local input dir: {local_dir}')
         memory_zip_file = io.BytesIO()
         with zipfile.ZipFile(memory_zip_file, 'w', zipfile.ZIP_DEFLATED) as job_data_zip:
             for root, dirs, files in os.walk(local_dir):
