@@ -53,6 +53,7 @@ Open a terminal and run the following commands in any working directory:
     $> cd ..
 
 2. Build local pfcon dev
+
 .. code-block:: bash
 
     $> git clone https://github.com/FNNDSC/pfcon.git
