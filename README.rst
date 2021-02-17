@@ -42,6 +42,17 @@ Fire up the full set of pfcon services
 
 Open a terminal and run the following commands in any working directory:
 
+1. Build local pman
+
+.. code-block:: bash
+
+    $> git clone https://github.com/FNNDSC/pman.git
+    $> cd pman
+    $> git checkout flask
+    $> docker build -t local/pman .
+    $> cd ..
+
+2. Build local pfcon dev
 .. code-block:: bash
 
     $> git clone https://github.com/FNNDSC/pfcon.git
@@ -49,7 +60,7 @@ Open a terminal and run the following commands in any working directory:
     $> git checkout flask
     $> docker build -t local/pfcon:dev -f Dockerfile_dev .
 
-Modify ``docker-compose_dev.yml`` to use ``local/pfcon:dev`` as the image for the ``pfcon_service``, then type:
+3. Modify ``docker-compose_dev.yml`` to use ``local/pfcon:dev`` as the image for the ``pfcon_service`` and ``local/pman`` as the image for ``pman_service``, then type:
 
 .. code-block:: bash
 
