@@ -2,7 +2,7 @@
 python-pfconclient
 ##################
 
-A Python3 client for the (flask-based) pfcon's web API.
+A Python3 client for pfcon's web API.
 
 .. image:: https://travis-ci.org/FNNDSC/python-pfconclient.svg?branch=master
     :target: https://travis-ci.org/FNNDSC/python-pfconclient
@@ -25,8 +25,7 @@ Installation
 pfcon server preconditions
 --------------------------
 
-These preconditions are only necessary to be able to test the client against an actual instance of the
-(flask-based) pfcon server.
+These preconditions are only necessary to be able to test the client against an actual instance of the pfcon server.
 
 Install latest Docker and Docker Compose
 ========================================
@@ -42,29 +41,10 @@ Fire up the full set of pfcon services
 
 Open a terminal and run the following commands in any working directory:
 
-1. Build local pman
-
-.. code-block:: bash
-
-    $> git clone https://github.com/FNNDSC/pman.git
-    $> cd pman
-    $> git checkout flask
-    $> docker build -t local/pman .
-    $> cd ..
-
-2. Build local pfcon dev
-
 .. code-block:: bash
 
     $> git clone https://github.com/FNNDSC/pfcon.git
     $> cd pfcon
-    $> git checkout flask
-    $> docker build -t local/pfcon:dev -f Dockerfile_dev .
-
-3. Modify ``docker-compose_dev.yml`` to use ``local/pfcon:dev`` as the image for the ``pfcon_service`` and ``local/pman`` as the image for ``pman_service``, then type:
-
-.. code-block:: bash
-
     $> ./make.sh
 
 You can later remove all the backend containers with:
