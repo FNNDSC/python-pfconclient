@@ -40,13 +40,16 @@ class Client(object):
         # poll for job's execution status using exponential backoff retries
         status = self.poll_job_status(job_id, timeout)
         if status == 'finishedSuccessfully':
-            print(f'Downloading and unpacking job {job_id} files...')
+            print(f'\nDownloading and unpacking job {job_id} files...')
             self.get_job_files(job_id, output_dir, timeout)
             print('Done')
         elif status == 'finishedWithError':
             print(f'Job {job_id} finished with errors')
         else:
             print(f'Job {job_id} finished with unexpected status: {status}')
+        print(f'\nDeleting job {job_id} data from the remote...')
+        self.delete_job_data(job_id, timeout)
+        print('Done')
         return status
 
     def submit_job(self, job_id, d_job_descriptors, data_file, timeout=1000):
@@ -125,6 +128,13 @@ class Client(object):
                 with open(fpath, 'wb') as f:
                     f.write(content)
 
+    def delete_job_data(self, job_id, timeout=1000):
+        """
+        Delete a job's data from the remote environment.
+        """
+        url = self.url + job_id + '/file/'
+        self.delete(url, timeout)
+
     def get(self, url, timeout=30):
         """
         Make a GET request to pfcon.
@@ -170,11 +180,9 @@ class Client(object):
         """
         try:
             if self.username or self.password:
-                r = requests.delete(url,
-                                    auth=(self.username, self.password),
-                                    timeout=timeout)
+                requests.delete(url, auth=(self.username, self.password), timeout=timeout)
             else:
-                r = requests.delete(url, timeout=timeout)
+                requests.delete(url, timeout=timeout)
         except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
             raise PfconRequestException(str(e))
 
