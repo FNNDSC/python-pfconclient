@@ -10,7 +10,7 @@ A Python3 client for pfcon's web API.
 
 Overview
 --------
-This repository provides a Python3 client for the (flask-based) pfcon's web API.
+This repository provides a Python3 client for pfcon service's web API.
 The client provides both a Python programmatic interface and a standalone CLI tool called ``pfconclient``.
 
 
@@ -27,14 +27,15 @@ pfcon server preconditions
 
 These preconditions are only necessary to be able to test the client against an actual instance of the pfcon server.
 
-Install latest Docker and Docker Compose
-========================================
+Install latest Docker
+=====================
 
 Currently tested platforms:
 
 - Ubuntu 18.04+ and MAC OS X 11.1+
 
-Note: On a Linux machine make sure to add your computer user to the ``docker`` group
+Note: On a Linux machine make sure to add your computer user to the ``docker`` group.
+Consult this page https://docs.docker.com/engine/install/linux-postinstall/
 
 Fire up the full set of pfcon services
 ======================================
@@ -45,7 +46,7 @@ Open a terminal and run the following commands in any working directory:
 
     $> git clone https://github.com/FNNDSC/pfcon.git
     $> cd pfcon
-    $> ./make.sh
+    $> ./make.sh  
 
 You can later remove all the backend containers with:
 
@@ -67,7 +68,7 @@ Instantiate the client:
 
     from pfconclient import client
 
-    cl = client.Client('http://localhost:5006/api/v1/')
+    cl = client.Client('http://localhost:30006/api/v1/')
 
 
 Run ``fs`` plugin until finished using any local input directory and get the resulting files in a local output directory:
@@ -127,14 +128,14 @@ Run ``fs`` plugin until finished using any local input directory and get the res
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:5006/api/v1/ chris-jid-3 run --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads' --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp --selfexec simplefsapp --selfpath /usr/local/bin --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
+    $> pfconclient http://localhost:30006/api/v1/ chris-jid-3 run --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads' --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp --selfexec simplefsapp --selfpath /usr/local/bin --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
 
 
 Run ``ds`` plugin until finished using the local output directory of a previous plugin as its input directory and get the resulting files in a local output directory:
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:5006/api/v1/ chris-jid-4 run --cmd_args '--saveinputmeta --saveoutputmeta --prefix lolo' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --selfexec simpledsapp --selfpath /usr/local/bin --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
+    $> pfconclient http://localhost:30006/api/v1/ chris-jid-4 run --cmd_args '--saveinputmeta --saveoutputmeta --prefix lolo' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --selfexec simpledsapp --selfpath /usr/local/bin --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
 
 Visit the `standalone CLI client`_ wiki page to learn more about the CLI client.
 
