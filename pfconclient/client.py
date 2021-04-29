@@ -47,8 +47,8 @@ class Client(object):
             print(f'Job {job_id} finished with errors')
         else:
             print(f'Job {job_id} finished with unexpected status: {status}')
-        print(f'\nDeleting job {job_id} data from the remote...')
-        self.delete_job_data(job_id, timeout)
+        print(f'\nDeleting job {job_id} from the remote...')
+        self.delete_job(job_id, timeout)
         print('Done')
         return status
 
@@ -128,11 +128,11 @@ class Client(object):
                 with open(fpath, 'wb') as f:
                     f.write(content)
 
-    def delete_job_data(self, job_id, timeout=1000):
+    def delete_job(self, job_id, timeout=1000):
         """
-        Delete a job's data from the remote environment.
+        Delete an existing job.
         """
-        url = self.url + job_id + '/file/'
+        url = self.url + job_id + '/'
         self.delete(url, timeout)
 
     def get(self, url, timeout=30):
@@ -191,7 +191,7 @@ class Client(object):
         """
         Static method to get the data dictionary from a response object.
         """
-        if response.status_code != 200:
+        if response.status_code not in (200, 201):
             raise PfconRequestException(response.text)
         if content_type == 'application/json':
             data = response.json()

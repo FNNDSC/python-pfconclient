@@ -13,7 +13,7 @@ from pfconclient import client
 class ClientTests(TestCase):
 
     def setUp(self):
-        self.pfcon_url = "http://localhost:5006/api/v1/"
+        self.pfcon_url = "http://localhost:30006/api/v1/"
         self.client = client.Client(self.pfcon_url)
         self.client.max_wait = 2 ** 3
 
@@ -72,6 +72,10 @@ class ClientTests(TestCase):
         self.assertIn('data', resp_data)
         self.assertIn('compute', resp_data)
 
+        # clean up
+        time.sleep(2)
+        self.client.delete_job(job_id)
+
     def test_get_job_status(self):
         """
         Test whether get_job_status method makes the appropriate request to pfcon.
@@ -104,6 +108,9 @@ class ClientTests(TestCase):
 
         self.assertIn('compute', resp_data)
         self.assertIn('status', resp_data['compute'])
+
+        # clean up
+        self.client.delete_job(job_id)
 
     def test_get_job_zip_data(self):
         """
@@ -141,3 +148,6 @@ class ClientTests(TestCase):
         with zipfile.ZipFile(memory_zip_file, 'r', zipfile.ZIP_DEFLATED) as job_data_zip:
             filenames = job_data_zip.namelist()
             self.assertIn('test.txt', filenames)
+
+        # clean up
+        self.client.delete_job(job_id)
