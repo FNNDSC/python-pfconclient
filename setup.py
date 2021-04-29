@@ -7,7 +7,7 @@ with open(path.join(path.dirname(path.abspath(__file__)), 'README.rst')) as f:
 
 setup(
       name             =   'python-pfconclient',
-      version          =   '2.1.0',
+      version          =   '2.2.0',
       description      =   '(Python) client for the Pfcon API',
       long_description =   readme,
       author           =   'FNNDSC',
