@@ -11,6 +11,8 @@ A Python3 client for pfcon's web API.
     :target: https://github.com/FNNDSC/pfcon/blob/master/LICENSE
 .. image:: https://img.shields.io/github/last-commit/fnndsc/pfcon.svg
     :alt: Last Commit
+.. image:: https://badge.fury.io/py/python-pfconclient.svg
+    :target: https://badge.fury.io/py/python-pfconclient
     
 
 
