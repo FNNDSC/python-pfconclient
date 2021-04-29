@@ -133,7 +133,9 @@ class Client(object):
         Delete an existing job.
         """
         url = self.url + job_id + '/'
-        self.delete(url, timeout)
+        resp = self.delete(url, timeout)
+        if resp.status_code != 204:
+            raise PfconRequestException(resp.text)
 
     def get(self, url, timeout=30):
         """
@@ -180,11 +182,13 @@ class Client(object):
         """
         try:
             if self.username or self.password:
-                requests.delete(url, auth=(self.username, self.password), timeout=timeout)
+                r = requests.delete(url, auth=(self.username, self.password),
+                                    timeout=timeout)
             else:
-                requests.delete(url, timeout=timeout)
+                r = requests.delete(url, timeout=timeout)
         except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
             raise PfconRequestException(str(e))
+        return r
 
     @staticmethod
     def get_data_from_response(response, content_type='application/json'):

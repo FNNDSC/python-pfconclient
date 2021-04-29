@@ -102,6 +102,9 @@ parser_download.add_argument('outputdir', help="directory to download job's outp
 parser_download.add_argument('--zip', action='store_true',
                              help='save output files as a single zip file')
 
+# create the parser for the "delete" command
+parser_delete = subparsers.add_parser('delete', help='delete an existing job')
+
 # parse the arguments and perform the appropriate action with the client
 args = parser.parse_args()
 timeout = args.timeout or 1000
@@ -149,3 +152,6 @@ elif args.subparser_name == 'download':
         client.get_job_zip_file(args.jid, args.outputdir, timeout)
     else:
         client.get_job_files(args.jid, args.outputdir, timeout)
+elif args.subparser_name == 'delete':
+    client.delete_job(args.jid, timeout)
+    print('\nDeleted job %s' % args.jid)
