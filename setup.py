@@ -7,14 +7,14 @@ with open(path.join(path.dirname(path.abspath(__file__)), 'README.rst')) as f:
 
 setup(
       name             =   'python-pfconclient',
-      version          =   '2.2.0',
+      version          =   '3.0.0',
       description      =   '(Python) client for the Pfcon API',
       long_description =   readme,
       author           =   'FNNDSC',
       author_email     =   'dev@babymri.org',
       url              =   'https://github.com/FNNDSC/python-pfconclient',
       packages         =   ['pfconclient'],
-      install_requires =   ['requests>=2.21.0'],
+      install_requires =   ['requests>=2.27.1'],
       test_suite       =   'nose.collector',
       tests_require    =   ['nose'],
       scripts          =   ['bin/pfconclient'],

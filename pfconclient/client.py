@@ -8,7 +8,7 @@ import time
 import zipfile
 import json
 import requests
-from .exceptions import PfconRequestException
+from .exceptions import PfconRequestException, PfconRequestInvalidTokenException
 
 
 class Client(object):
@@ -16,14 +16,18 @@ class Client(object):
     A pfcon API client.
     """
 
-    def __init__(self, url, username=None, password=None):
+    def __init__(self, url, auth_token):
         self.url = url
-        self.username = username
-        self.password = password
+        self.set_auth_token(auth_token)
 
         # initial and maximum wait time (seconds) for exponential-backoff-based retries
         self.initial_wait = 2
         self.max_wait = 2**15
+
+    def set_auth_token(self, auth_token):
+        if not auth_token:
+            raise PfconRequestInvalidTokenException(f'Invalid auth token: {auth_token}')
+        self.auth_token = str(auth_token)
 
     def run_job(self, job_id, d_job_descriptors, input_dir, output_dir, timeout=1000):
         """
@@ -57,14 +61,15 @@ class Client(object):
         Submit a new job.
         """
         d_job_descriptors['jid'] = job_id
-        resp = self.post(self.url, d_job_descriptors, data_file, timeout)
+        url = self.url + 'jobs/'
+        resp = self.post(url, d_job_descriptors, data_file, timeout)
         return self.get_data_from_response(resp)
 
     def get_job_status(self, job_id, timeout=1000):
         """
         Get a job's execution status.
         """
-        url = self.url + job_id + '/'
+        url = self.url + 'jobs/' + job_id + '/'
         resp = self.get(url, timeout)
         return self.get_data_from_response(resp)
 
@@ -94,7 +99,7 @@ class Client(object):
         """
         Get a job's zip file content.
         """
-        url = self.url + job_id + '/file/'
+        url = self.url + 'jobs/' + job_id + '/file/'
         resp = self.get(url, timeout)
         zip_content = self.get_data_from_response(resp, 'application/zip')
         return zip_content
@@ -132,9 +137,11 @@ class Client(object):
         """
         Delete an existing job.
         """
-        url = self.url + job_id + '/'
+        url = self.url + 'jobs/' + job_id + '/'
         resp = self.delete(url, timeout)
         if resp.status_code != 204:
+            if resp.status_code == 401:
+                raise PfconRequestInvalidTokenException(resp.text)
             raise PfconRequestException(resp.text)
 
     def get(self, url, timeout=30):
@@ -142,12 +149,9 @@ class Client(object):
         Make a GET request to pfcon.
         """
         try:
-            if self.username or self.password:
-                r = requests.get(url,
-                                 auth=(self.username, self.password),
-                                 timeout=timeout)
-            else:
-                r = requests.get(url, timeout=timeout)
+            r = requests.get(url,
+                             headers={'Authorization': 'Bearer ' + self.auth_token},
+                             timeout=timeout)
         except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
             raise PfconRequestException(str(e))
         return r
@@ -156,22 +160,18 @@ class Client(object):
         """
         Make a POST request to pfcon.
         """
+        headers = {'Authorization': 'Bearer ' + self.auth_token}
         if data_file is None:
-            headers = {'Content-Type': 'application/json'}
+            headers['Content-Type'] = 'application/json'
             files = None
             data = json.dumps(data)
         else:
             # this is a multipart request
-            headers = None
             files = {'data_file': data_file}
         try:
-            if self.username or self.password:
-                r = requests.post(url, files=files, data=data,
-                                  auth=(self.username, self.password),
-                                  timeout=timeout, headers=headers)
-            else:
-                r = requests.post(url, files=files, data=data, timeout=timeout,
-                                  headers=headers)
+            r = requests.post(url, files=files, data=data,
+                              headers={'Authorization': 'Bearer ' + self.auth_token},
+                              timeout=timeout)
         except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
             raise PfconRequestException(str(e))
         return r
@@ -181,14 +181,26 @@ class Client(object):
         Make a DELETE request to pfcon.
         """
         try:
-            if self.username or self.password:
-                r = requests.delete(url, auth=(self.username, self.password),
-                                    timeout=timeout)
-            else:
-                r = requests.delete(url, timeout=timeout)
+            r = requests.delete(url,
+                                headers={'Authorization': 'Bearer ' + self.auth_token},
+                                timeout=timeout)
         except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
             raise PfconRequestException(str(e))
         return r
+
+    @staticmethod
+    def get_auth_token(pfcon_auth_url, pfcon_user, pfcon_password, timeout=30):
+        """
+        Make a POST request to obtain an auth token.
+        """
+        try:
+            r = requests.post(pfcon_auth_url,
+                              json={'pfcon_user': pfcon_user,
+                                    'pfcon_password': pfcon_password},
+                              timeout=timeout)
+        except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
+            raise PfconRequestException(str(e))
+        return r.json().get('token')
 
     @staticmethod
     def get_data_from_response(response, content_type='application/json'):
@@ -196,6 +208,8 @@ class Client(object):
         Static method to get the data dictionary from a response object.
         """
         if response.status_code not in (200, 201):
+            if response.status_code == 401:
+                raise PfconRequestInvalidTokenException(response.text)
             raise PfconRequestException(response.text)
         if content_type == 'application/json':
             data = response.json()

@@ -18,19 +18,23 @@ from pfconclient import client
 
 parser = ArgumentParser(description='Manage pfcon service resources')
 parser.add_argument('url', help="url of pfcon service")
-parser.add_argument('jid', help="job id")
-parser.add_argument('-u', '--username', help="username for pfcon service")
-parser.add_argument('-p', '--password', help="password for pfcon service")
-parser.add_argument('--timeout', help="requests' timeout")
+parser.add_argument('-a', '--auth_token', help="authorization token for pfcon service")
+parser.add_argument('-t', '--timeout', help="requests' timeout")
 subparsers = parser.add_subparsers(dest='subparser_name', title='subcommands',
                                    description='valid subcommands',
                                    help='sub-command help')
+
+# create the parser for the "auth" command
+parser_auth = subparsers.add_parser('auth', help='get an auth token')
+parser_auth.add_argument('--pfcon_user', help="pfcon user", required=True)
+parser_auth.add_argument('--pfcon_password', help="pfcon user's password", required=True)
 
 # create the parser for the "run" command
 parser_run = subparsers.add_parser('run', help='run a new job until finished')
 parser_run.add_argument('inputdir', help="job input directory")
 parser_run.add_argument('outputdir', help="job output directory")
 run_req_group = parser_run.add_argument_group('required job API parameters')
+run_req_group.add_argument('--jid', help="job id", required=True)
 run_req_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
 run_req_group.add_argument('--auid', help='user id', required=True)
 run_req_group.add_argument('--number_of_workers', help='number of workers',
@@ -62,6 +66,7 @@ parser_run.add_argument('--poll_max_wait',
 parser_submit = subparsers.add_parser('submit', help='submit a new job')
 parser_submit.add_argument('inputdir', help="job input directory")
 submit_req_group = parser_submit.add_argument_group('required job API parameters')
+submit_req_group.add_argument('--jid', help="job id", required=True)
 submit_req_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
 submit_req_group.add_argument('--auid', help='user id', required=True)
 submit_req_group.add_argument('--number_of_workers', help='number of workers', required=True)
@@ -86,10 +91,12 @@ submit_opt_group.add_argument('--cmd_path_flags',
 
 # create the parser for the "status" command
 parser_status = subparsers.add_parser('status', help='get the exec status of a job')
+parser_status.add_argument('--jid', help="job id", required=True)
 
 # create the parser for the "poll" command
 parser_poll = subparsers.add_parser('poll',
                                     help='poll the exec status of a job until finished')
+parser_poll.add_argument('--jid', help="job id", required=True)
 parser_poll.add_argument('--poll_initial_wait',
                          help='initial wait time in seconds to poll for job status')
 parser_poll.add_argument('--poll_max_wait',
@@ -98,60 +105,68 @@ parser_poll.add_argument('--poll_max_wait',
 # create the parser for the "download" command
 parser_download = subparsers.add_parser('download',
                                         help="download job's output files")
+parser_download.add_argument('--jid', help="job id", required=True)
 parser_download.add_argument('outputdir', help="directory to download job's output files")
 parser_download.add_argument('--zip', action='store_true',
                              help='save output files as a single zip file')
 
 # create the parser for the "delete" command
 parser_delete = subparsers.add_parser('delete', help='delete an existing job')
+parser_delete.add_argument('--jid', help="job id", required=True)
 
 # parse the arguments and perform the appropriate action with the client
 args = parser.parse_args()
 timeout = args.timeout or 1000
-client = client.Client(args.url, args.username, args.password)
 
-if args.subparser_name == 'run' or args.subparser_name == 'submit':
-    d_job_descriptors = {
-        'cmd_args': args.cmd_args,
-        'cmd_path_flags': args.cmd_path_flags if args.cmd_path_flags is not None else '',
-        'auid': args.auid,
-        'number_of_workers': args.number_of_workers,
-        'cpu_limit': args.cpu_limit,
-        'memory_limit': args.memory_limit,
-        'gpu_limit': args.gpu_limit,
-        'image': args.image,
-        'selfexec': args.selfexec,
-        'selfpath': args.selfpath,
-        'execshell':args.execshell,
-        'type': args.type
-    }
-    if args.subparser_name == 'run':
+if args.subparser_name == 'auth':
+    auth_url = args.url + 'auth-token/'
+    token = client.Client.get_auth_token(auth_url, args.pfcon_user, args.pfcon_password)
+    print(f'\ntoken: {token}\n')
+else:
+    client = client.Client(args.url, args.auth_token)
+
+    if args.subparser_name == 'run' or args.subparser_name == 'submit':
+        d_job_descriptors = {
+            'cmd_args': args.cmd_args,
+            'cmd_path_flags': args.cmd_path_flags if args.cmd_path_flags is not None else '',
+            'auid': args.auid,
+            'number_of_workers': args.number_of_workers,
+            'cpu_limit': args.cpu_limit,
+            'memory_limit': args.memory_limit,
+            'gpu_limit': args.gpu_limit,
+            'image': args.image,
+            'selfexec': args.selfexec,
+            'selfpath': args.selfpath,
+            'execshell':args.execshell,
+            'type': args.type
+        }
+        if args.subparser_name == 'run':
+            if args.poll_initial_wait:
+                client.initial_wait = args.poll_initial_wait
+            if args.poll_max_wait:
+                client.max_wait = args.poll_max_wait
+            client.run_job(args.jid, d_job_descriptors, args.inputdir, args.outputdir,
+                           timeout)
+        else:
+            # create job zip file content from local input_dir
+            job_zip_file = client.create_zip_file(args.inputdir)
+            zip_content = job_zip_file.getvalue()
+            client.submit_job(args.jid, d_job_descriptors, zip_content, timeout)
+    elif args.subparser_name == 'status':
+        d_resp = client.get_job_status(args.jid, timeout)
+        status = d_resp['compute']['status']
+        print('\nJob %s status: %s' % (args.jid, status))
+    elif args.subparser_name == 'poll':
         if args.poll_initial_wait:
             client.initial_wait = args.poll_initial_wait
         if args.poll_max_wait:
             client.max_wait = args.poll_max_wait
-        client.run_job(args.jid, d_job_descriptors, args.inputdir, args.outputdir,
-                       timeout)
-    else:
-        # create job zip file content from local input_dir
-        job_zip_file = client.create_zip_file(args.inputdir)
-        zip_content = job_zip_file.getvalue()
-        client.submit_job(args.jid, d_job_descriptors, zip_content, timeout)
-elif args.subparser_name == 'status':
-    d_resp = client.get_job_status(args.jid, timeout)
-    status = d_resp['compute']['status']
-    print('\nJob %s status: %s' % (args.jid, status))
-elif args.subparser_name == 'poll':
-    if args.poll_initial_wait:
-        client.initial_wait = args.poll_initial_wait
-    if args.poll_max_wait:
-        client.max_wait = args.poll_max_wait
-    client.poll_job_status(args.jid, timeout)
-elif args.subparser_name == 'download':
-    if args.zip:
-        client.get_job_zip_file(args.jid, args.outputdir, timeout)
-    else:
-        client.get_job_files(args.jid, args.outputdir, timeout)
-elif args.subparser_name == 'delete':
-    client.delete_job(args.jid, timeout)
-    print('\nDeleted job %s' % args.jid)
+        client.poll_job_status(args.jid, timeout)
+    elif args.subparser_name == 'download':
+        if args.zip:
+            client.get_job_zip_file(args.jid, args.outputdir, timeout)
+        else:
+            client.get_job_files(args.jid, args.outputdir, timeout)
+    elif args.subparser_name == 'delete':
+        client.delete_job(args.jid, timeout)
+        print('\nDeleted job %s' % args.jid)

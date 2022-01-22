@@ -68,7 +68,8 @@ Instantiate the client:
 
     from pfconclient import client
 
-    cl = client.Client('http://localhost:30006/api/v1/')
+    token = client.Client.get_auth_token('http://localhost:30006/api/v1/auth-token/', 'pfcon', 'pfcon1234')
+    cl = client.Client('http://localhost:30006/api/v1/', token)
 
 
 Run ``fs`` plugin until finished using any local input directory and get the resulting files in a local output directory:
@@ -124,18 +125,26 @@ Visit the `Python programmatic interface`_ wiki page to learn more about the cli
 Standalone CLI client tool
 ==========================
 
+Get and print auth token with the `auth` subcommand:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ auth --pfcon_user pfcon --pfcon_password pfcon1234
+
+
 Run ``fs`` plugin until finished using any local input directory and get the resulting files in a local output directory:
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:30006/api/v1/ chris-jid-3 run --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads' --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp --selfexec simplefsapp --selfpath /usr/local/bin --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> run --jid chris-jid-3 --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads' --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp --selfexec simplefsapp --selfpath /usr/local/bin --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
 
 
 Run ``ds`` plugin until finished using the local output directory of a previous plugin as its input directory and get the resulting files in a local output directory:
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:30006/api/v1/ chris-jid-4 run --cmd_args '--saveinputmeta --saveoutputmeta --prefix lolo' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --selfexec simpledsapp --selfpath /usr/local/bin --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> run --jid chris-jid-4 --cmd_args '--saveinputmeta --saveoutputmeta --prefix lolo' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --selfexec simpledsapp --selfpath /usr/local/bin --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
+
 
 Visit the `standalone CLI client`_ wiki page to learn more about the CLI client.
 

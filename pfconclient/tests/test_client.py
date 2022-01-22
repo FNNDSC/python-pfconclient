@@ -14,8 +14,10 @@ class ClientTests(TestCase):
 
     def setUp(self):
         self.pfcon_url = "http://localhost:30006/api/v1/"
-        self.client = client.Client(self.pfcon_url)
-        self.client.max_wait = 2 ** 3
+        self.pfcon_jobs_url = "http://localhost:30006/api/v1/jobs/"
+        self.pfcon_user = 'pfcon'
+        self.pfcon_password = 'pfcon1234'
+        self.pfcon_auth_url = self.pfcon_url + 'auth-token/'
 
         # create an in-memory zip file
         self.zip_file = io.BytesIO()
@@ -51,13 +53,15 @@ class ClientTests(TestCase):
             zip_content = self.zip_file.getvalue()
 
             # call submit_job method
-            self.client.submit_job(job_id, self.job_descriptors, zip_content)
+            cl = client.Client(self.pfcon_url, 'a@token')
+            cl.max_wait = 2 ** 3
+            cl.submit_job(job_id, self.job_descriptors, zip_content)
 
-            requests_post_mock.assert_called_with(self.pfcon_url,
+            requests_post_mock.assert_called_with(self.pfcon_jobs_url,
                                                   files={'data_file': zip_content},
                                                   data=self.job_descriptors,
-                                                  timeout=1000,
-                                                  headers=None)
+                                                  headers={'Authorization': 'Bearer a@token'},
+                                                  timeout=1000)
 
     @attr('integration')
     def test_integration_submit_job(self):
@@ -68,13 +72,18 @@ class ClientTests(TestCase):
         zip_content = self.zip_file.getvalue()
 
         # call submit_job method
-        resp_data = self.client.submit_job(job_id, self.job_descriptors, zip_content)
+
+        auth_token = client.Client.get_auth_token(self.pfcon_auth_url, self.pfcon_user,
+                                                  self.pfcon_password)
+        cl = client.Client(self.pfcon_url, auth_token)
+        cl.max_wait = 2 ** 3
+        resp_data = cl.submit_job(job_id, self.job_descriptors, zip_content)
         self.assertIn('data', resp_data)
         self.assertIn('compute', resp_data)
 
         # clean up
         time.sleep(2)
-        self.client.delete_job(job_id)
+        cl.delete_job(job_id)
 
     def test_get_job_status(self):
         """
@@ -88,10 +97,14 @@ class ClientTests(TestCase):
             job_id = 'chris-jid-1'
 
             # call get_job_status method
-            self.client.get_job_status(job_id)
+            cl = client.Client(self.pfcon_url, 'a@token')
+            cl.max_wait = 2 ** 3
+            cl.get_job_status(job_id)
 
-            url = self.pfcon_url + job_id + '/'
-            requests_get_mock.assert_called_with(url, timeout=1000)
+            url = self.pfcon_jobs_url + job_id + '/'
+            requests_get_mock.assert_called_with(url,
+                                                 headers={'Authorization': 'Bearer a@token'},
+                                                 timeout=1000)
 
     @attr('integration')
     def test_integration_get_job_status(self):
@@ -100,17 +113,21 @@ class ClientTests(TestCase):
         """
         job_id = 'chris-jid-%s' % random.randint(10 ** 3, 10 ** 7)
         zip_content = self.zip_file.getvalue()
-        self.client.submit_job(job_id, self.job_descriptors, zip_content)
+        auth_token = client.Client.get_auth_token(self.pfcon_auth_url, self.pfcon_user,
+                                                  self.pfcon_password)
+        cl = client.Client(self.pfcon_url, auth_token)
+        cl.max_wait = 2 ** 3
+        cl.submit_job(job_id, self.job_descriptors, zip_content)
         time.sleep(2)
 
         # call get_job_status method
-        resp_data = self.client.get_job_status(job_id)
+        resp_data = cl.get_job_status(job_id)
 
         self.assertIn('compute', resp_data)
         self.assertIn('status', resp_data['compute'])
 
         # clean up
-        self.client.delete_job(job_id)
+        cl.delete_job(job_id)
 
     def test_get_job_zip_data(self):
         """
@@ -124,11 +141,15 @@ class ClientTests(TestCase):
             job_id = 'chris-jid-1'
 
             # call get_job_status method
-            resp_data = self.client.get_job_zip_data(job_id)
+            cl = client.Client(self.pfcon_url, 'a@token')
+            cl.max_wait = 2 ** 3
+            resp_data = cl.get_job_zip_data(job_id)
 
             self.assertEqual(resp_data, response_mock.content)
-            url = self.pfcon_url + job_id + '/file/'
-            requests_get_mock.assert_called_with(url, timeout=1000)
+            url = self.pfcon_jobs_url + job_id + '/file/'
+            requests_get_mock.assert_called_with(url,
+                                                 headers={'Authorization': 'Bearer a@token'},
+                                                 timeout=1000)
 
     @attr('integration')
     def test_integration_get_job_zip_data(self):
@@ -137,12 +158,16 @@ class ClientTests(TestCase):
         """
         job_id = 'chris-jid-%s' % random.randint(10 ** 3, 10 ** 7)
         zip_content = self.zip_file.getvalue()
-        self.client.submit_job(job_id, self.job_descriptors, zip_content)
+        auth_token = client.Client.get_auth_token(self.pfcon_auth_url, self.pfcon_user,
+                                                  self.pfcon_password)
+        cl = client.Client(self.pfcon_url, auth_token)
+        cl.max_wait = 2 ** 3
+        cl.submit_job(job_id, self.job_descriptors, zip_content)
         time.sleep(2)
-        self.client.poll_job_status(job_id)
+        cl.poll_job_status(job_id)
 
         # call get_job_zip_data method
-        resp_data = self.client.get_job_zip_data(job_id)
+        resp_data = cl.get_job_zip_data(job_id)
 
         memory_zip_file = io.BytesIO(resp_data)
         with zipfile.ZipFile(memory_zip_file, 'r', zipfile.ZIP_DEFLATED) as job_data_zip:
@@ -150,4 +175,4 @@ class ClientTests(TestCase):
             self.assertIn('test.txt', filenames)
 
         # clean up
-        self.client.delete_job(job_id)
+        cl.delete_job(job_id)
