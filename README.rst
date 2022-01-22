@@ -4,8 +4,13 @@ python-pfconclient
 
 A Python3 client for pfcon's web API.
 
-.. image:: https://travis-ci.org/FNNDSC/python-pfconclient.svg?branch=master
-    :target: https://travis-ci.org/FNNDSC/python-pfconclient
+.. image:: https://app.travis-ci.com/FNNDSC/python-pfconclient.svg?branch=main
+    :target: https://app.travis-ci.com/FNNDSC/python-pfconclient
+.. image:: https://img.shields.io/github/license/fnndsc/python-pfconclient
+    :alt: MIT License
+    :target: https://github.com/FNNDSC/python-pfconclient/blob/master/LICENSE
+.. image:: https://badge.fury.io/py/python-pfconclient.svg
+    :target: https://badge.fury.io/py/python-pfconclient 
 
 
 Overview
