@@ -7,6 +7,7 @@ docs/build
 htmlcov
 .docker
 .idea/
+venv/
 # all log files
 *.log
 
