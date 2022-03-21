@@ -26,17 +26,15 @@ class ClientTests(TestCase):
         self.zip_file.seek(0)
 
         job_descriptors = {
-            'cmd_args': '--saveinputmeta --saveoutputmeta --dir cube/uploads',
-            'cmd_path_flags': '--dir',
+            'entrypoint': ['python3', '/usr/local/bin/simplefsapp'],
+            'args': ['--saveinputmeta', '--saveoutputmeta', '--dir', 'cube/uploads'],
+            'args_path_flags': ['--dir'],
             'auid': 'cube',
             'number_of_workers': 1,
             'cpu_limit': 1000,
             'memory_limit': 200,
             'gpu_limit': 0,
             'image': 'fnndsc/pl-simplefsapp',
-            'selfexec': 'simplefsapp',
-            'selfpath': '/usr/local/bin',
-            'execshell': 'python3',
             'type': 'fs'}
         self.job_descriptors = job_descriptors.copy()
 

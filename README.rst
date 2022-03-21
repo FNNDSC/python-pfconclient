@@ -82,8 +82,8 @@ Run ``fs`` plugin until finished using any local input directory and get the res
 .. code-block:: python
 
     job_descriptors = {
-        'cmd_args': '--saveinputmeta --saveoutputmeta --dir cube/uploads',
-        'cmd_path_flags': '--dir',  # comma separated list of flags with arguments of type 'path' or 'unextpath'
+        'args': ['--saveinputmeta', '--saveoutputmeta', '--dir', 'cube/uploads'],
+        'args_path_flags': ['--dir'],  # list of flags with arguments of type 'path' or 'unextpath'
         'auid': 'cube',
         'number_of_workers': 1,
         'cpu_limit': 1000,
@@ -105,7 +105,7 @@ Run ``ds`` plugin until finished using the local output directory of a previous 
 .. code-block:: python
 
     job_descriptors = {
-        'cmd_args': '--saveinputmeta --saveoutputmeta --prefix lolo',
+        'args': ['--saveinputmeta', '--saveoutputmeta', '--prefix', 'lolo'],
         'auid': 'cube',
         'number_of_workers': 1,
         'cpu_limit': 1000,
@@ -141,14 +141,14 @@ Run ``fs`` plugin until finished using any local input directory and get the res
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:30006/api/v1/ -a <token> run --jid chris-jid-3 --cmd_args '--saveinputmeta --saveoutputmeta --dir cube/uploads' --cmd_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp --selfexec simplefsapp --selfpath /usr/local/bin --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> run --jid chris-jid-3 --args '--saveinputmeta --saveoutputmeta --dir cube/uploads' --args_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp --selfexec simplefsapp --selfpath /usr/local/bin --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
 
 
 Run ``ds`` plugin until finished using the local output directory of a previous plugin as its input directory and get the resulting files in a local output directory:
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:30006/api/v1/ -a <token> run --jid chris-jid-4 --cmd_args '--saveinputmeta --saveoutputmeta --prefix lolo' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --selfexec simpledsapp --selfpath /usr/local/bin --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> run --jid chris-jid-4 --args '--saveinputmeta --saveoutputmeta --prefix lolo' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --selfexec simpledsapp --selfpath /usr/local/bin --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
 
 
 Visit the `standalone CLI client`_ wiki page to learn more about the CLI client.
@@ -159,8 +159,8 @@ Visit the `standalone CLI client`_ wiki page to learn more about the CLI client.
 Arguments of type ``path`` or ``unextpath``
 ===========================================
 
-If a plugin's ``cmd_args`` string contains flags with arguments of type ``path`` or ``unextpath`` then those flags should be included
-in the optional ``cmd_path_flags`` string. This string represents a comma separated list of flags. This way ``pfcon`` server will
+If a plugin's ``args`` list contains flags with arguments of type ``path`` or ``unextpath`` then those flags should be included
+in the optional ``args_path_flags`` list. This string represents a list of flags. This way ``pfcon`` server will
 know that it has to substitute the local path specified by the flag by an actual path in the cloud.
 
 

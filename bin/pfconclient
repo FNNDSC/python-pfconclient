@@ -35,7 +35,7 @@ parser_run.add_argument('inputdir', help="job input directory")
 parser_run.add_argument('outputdir', help="job output directory")
 run_req_group = parser_run.add_argument_group('required job API parameters')
 run_req_group.add_argument('--jid', help="job id", required=True)
-run_req_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
+run_req_group.add_argument('--args', help='cmd arguments string', required=True)
 run_req_group.add_argument('--auid', help='user id', required=True)
 run_req_group.add_argument('--number_of_workers', help='number of workers',
                               required=True)
@@ -55,7 +55,7 @@ run_req_group.add_argument('--execshell',
 run_req_group.add_argument('--type', help='plugin type', choices=['fs', 'ds'],
                            required=True)
 run_opt_group = parser_run.add_argument_group('optional job API parameters')
-run_opt_group.add_argument('--cmd_path_flags',
+run_opt_group.add_argument('--args_path_flags',
                            help='comma separated list of cmd flags with path argument')
 parser_run.add_argument('--poll_initial_wait',
                         help='initial wait time in seconds to poll for job status')
@@ -67,7 +67,7 @@ parser_submit = subparsers.add_parser('submit', help='submit a new job')
 parser_submit.add_argument('inputdir', help="job input directory")
 submit_req_group = parser_submit.add_argument_group('required job API parameters')
 submit_req_group.add_argument('--jid', help="job id", required=True)
-submit_req_group.add_argument('--cmd_args', help='cmd arguments string', required=True)
+submit_req_group.add_argument('--args', help='cmd arguments string', required=True)
 submit_req_group.add_argument('--auid', help='user id', required=True)
 submit_req_group.add_argument('--number_of_workers', help='number of workers', required=True)
 submit_req_group.add_argument('--cpu_limit', help='cpu limit', required=True)
@@ -86,7 +86,7 @@ submit_req_group.add_argument('--execshell',
 submit_req_group.add_argument('--type', help='plugin type', choices=['fs', 'ds'],
                               required=True)
 submit_opt_group = parser_submit.add_argument_group('optional job API parameters')
-submit_opt_group.add_argument('--cmd_path_flags',
+submit_opt_group.add_argument('--args_path_flags',
                               help='comma separated list of cmd flags with path argument')
 
 # create the parser for the "status" command
@@ -127,17 +127,15 @@ else:
 
     if args.subparser_name == 'run' or args.subparser_name == 'submit':
         d_job_descriptors = {
-            'cmd_args': args.cmd_args,
-            'cmd_path_flags': args.cmd_path_flags if args.cmd_path_flags is not None else '',
+            'entrypoint': [args.execshell, os.path.join(args.selfpath, args.selfexec)],
+            'args': args.args.split(),
+            'args_path_flags': args.args_path_flags if args.args_path_flags is not None else '',
             'auid': args.auid,
             'number_of_workers': args.number_of_workers,
             'cpu_limit': args.cpu_limit,
             'memory_limit': args.memory_limit,
             'gpu_limit': args.gpu_limit,
             'image': args.image,
-            'selfexec': args.selfexec,
-            'selfpath': args.selfpath,
-            'execshell':args.execshell,
             'type': args.type
         }
         if args.subparser_name == 'run':
