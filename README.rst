@@ -90,9 +90,7 @@ Run ``fs`` plugin until finished using any local input directory and get the res
         'memory_limit': 200,
         'gpu_limit': 0,
         'image': 'fnndsc/pl-simplefsapp',
-        'selfexec': 'simplefsapp',
-        'selfpath': '/usr/local/bin',
-        'execshell': 'python3',
+        'entrypoint': ['python3', '/usr/local/bin/simplefsapp'],
         'type': 'fs'
     }
     job_id = 'chris-jid-1'
@@ -112,9 +110,7 @@ Run ``ds`` plugin until finished using the local output directory of a previous 
         'memory_limit': 200,
         'gpu_limit': 0,
         'image': 'fnndsc/pl-simpledsapp',
-        'selfexec': 'simpledsapp',
-        'selfpath': '/usr/local/bin',
-        'execshell': 'python3',
+        'entrypoint': ['python3', '/usr/local/bin/simpledsapp'],
         'type': 'ds'
     }
     job_id = 'chris-jid-2'
