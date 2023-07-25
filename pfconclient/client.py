@@ -16,9 +16,10 @@ class Client(object):
     A pfcon API client.
     """
 
-    def __init__(self, url, auth_token):
+    def __init__(self, url, auth_token, pfcon_innetwork=False):
         self.url = url
         self.set_auth_token(auth_token)
+        self.pfcon_innetwork = pfcon_innetwork
 
         # initial and maximum wait time (seconds) for exponential-backoff-based retries
         self.initial_wait = 2
@@ -56,7 +57,7 @@ class Client(object):
         print('Done')
         return status
 
-    def submit_job(self, job_id, d_job_descriptors, data_file, timeout=1000):
+    def submit_job(self, job_id, d_job_descriptors, data_file=None, timeout=1000):
         """
         Submit a new job.
         """
@@ -94,6 +95,29 @@ class Client(object):
                 wait_time = self.initial_wait * 2 ** poll_num
                 poll_num += 1
         return status
+
+    def get_job_json_data(self, job_id, job_output_path, timeout=1000):
+        """
+        Get a job's JSON file content. This only works for pfcon in-network mode
+        """
+        if not self.pfcon_innetwork:
+            raise PfconRequestException('JSON data is only available for PFCON server '
+                                        'operating in-network')
+        url = self.url + 'jobs/' + job_id + '/file/?job_output_path=' + job_output_path
+        resp = self.get(url, timeout)
+        json_content = self.get_data_from_response(resp)
+        return json_content
+
+    def get_job_json_file(self, job_id, job_output_path, local_dir, timeout=1000):
+        """
+        Get and save a job's zip file into a local directory.
+        """
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+        json_content = self.get_job_json_data(job_id, job_output_path, timeout)
+        fpath = os.path.join(local_dir, job_id + '.json')
+        with open(fpath, 'w') as f:
+            json.dump(json_content, f)
 
     def get_job_zip_data(self, job_id, timeout=1000):
         """
@@ -164,7 +188,6 @@ class Client(object):
         if data_file is None:
             headers['Content-Type'] = 'application/json'
             files = None
-            data = json.dumps(data)
         else:
             # this is a multipart request
             files = {'data_file': data_file}
