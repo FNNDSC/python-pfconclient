@@ -38,6 +38,19 @@ class ClientTests(TestCase):
             'type': 'fs'}
         self.job_descriptors = job_descriptors.copy()
 
+    @attr('integration')
+    def test_integration_get_server_info(self):
+        """
+        Test whether the get_server_info method returns expected server info from pfcon.
+        """
+        auth_token = client.Client.get_auth_token(self.pfcon_auth_url, self.pfcon_user,
+                                                  self.pfcon_password)
+        cl = client.Client(self.pfcon_url, auth_token)
+        resp_data = cl.get_server_info()
+        self.assertIn('server_version', resp_data)
+        self.assertIn('pfcon_innetwork', resp_data)
+        self.assertIn('storage_env', resp_data)
+
     def test_submit_job(self):
         """
         Test whether submit_job method makes the appropriate request to pfcon.

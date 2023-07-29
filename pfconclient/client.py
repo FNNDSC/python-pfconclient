@@ -16,10 +16,10 @@ class Client(object):
     A pfcon API client.
     """
 
-    def __init__(self, url, auth_token, pfcon_innetwork=False):
+    def __init__(self, url, auth_token):
         self.url = url
         self.set_auth_token(auth_token)
-        self.pfcon_innetwork = pfcon_innetwork
+        self.pfcon_innetwork = None
 
         # initial and maximum wait time (seconds) for exponential-backoff-based retries
         self.initial_wait = 2
@@ -29,6 +29,16 @@ class Client(object):
         if not auth_token:
             raise PfconRequestInvalidTokenException(f'Invalid auth token: {auth_token}')
         self.auth_token = str(auth_token)
+
+    def get_server_info(self, timeout=30):
+        """
+        Get info about the PFCON server.
+        """
+        url = self.url + 'jobs/'
+        resp = self.get(url, timeout)
+        data = self.get_data_from_response(resp)
+        self.pfcon_innetwork = data.get('pfcon_innetwork')
+        return data
 
     def run_job(self, job_id, d_job_descriptors, input_dir, output_dir, timeout=1000):
         """
@@ -98,8 +108,11 @@ class Client(object):
 
     def get_job_json_data(self, job_id, job_output_path, timeout=1000):
         """
-        Get a job's JSON file content. This only works for pfcon in-network mode
+        Get a job's JSON file content. This only works for pfcon in-network mode.
         """
+        if self.pfcon_innetwork is None:
+            self.get_server_info()
+
         if not self.pfcon_innetwork:
             raise PfconRequestException('JSON data is only available for PFCON server '
                                         'operating in-network')
@@ -110,7 +123,8 @@ class Client(object):
 
     def get_job_json_file(self, job_id, job_output_path, local_dir, timeout=1000):
         """
-        Get and save a job's zip file into a local directory.
+        Get and save a job's JSON file into a local directory. This only works for
+        pfcon in-network mode
         """
         if not os.path.exists(local_dir):
             os.makedirs(local_dir)
