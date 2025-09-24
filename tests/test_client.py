@@ -5,7 +5,6 @@ import random
 import time
 from unittest import TestCase
 from unittest import mock
-from nose.plugins.attrib import attr
 
 from pfconclient import client
 
@@ -38,7 +37,6 @@ class ClientTests(TestCase):
             'type': 'fs'}
         self.job_descriptors = job_descriptors.copy()
 
-    @attr('integration')
     def test_integration_get_server_info(self):
         """
         Test whether the get_server_info method returns expected server info from pfcon.
@@ -74,7 +72,6 @@ class ClientTests(TestCase):
                                                   headers={'Authorization': 'Bearer a@token'},
                                                   timeout=1000)
 
-    @attr('integration')
     def test_integration_submit_job(self):
         """
         Test whether submit_job method can successfully submit a job for execution.
@@ -117,7 +114,6 @@ class ClientTests(TestCase):
                                                  headers={'Authorization': 'Bearer a@token'},
                                                  timeout=1000)
 
-    @attr('integration')
     def test_integration_get_job_status(self):
         """
         Test whether get_job_status method can get the status of a job from pfcon.
@@ -162,7 +158,6 @@ class ClientTests(TestCase):
                                                  headers={'Authorization': 'Bearer a@token'},
                                                  timeout=1000)
 
-    @attr('integration')
     def test_integration_get_job_zip_data(self):
         """
         Test whether get_job_status method can get the status of a job from pfcon.

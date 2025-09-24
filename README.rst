@@ -4,8 +4,6 @@ python-pfconclient
 
 A Python3 client for pfcon's web API.
 
-.. image:: https://app.travis-ci.com/FNNDSC/python-pfconclient.svg?branch=main
-    :target: https://app.travis-ci.com/FNNDSC/python-pfconclient
 .. image:: https://img.shields.io/github/license/fnndsc/python-pfconclient
     :alt: MIT License
     :target: https://github.com/FNNDSC/python-pfconclient/blob/master/LICENSE
@@ -30,7 +28,7 @@ Installation
 pfcon server preconditions
 --------------------------
 
-These preconditions are only necessary to be able to test the client against an actual instance of the pfcon server.
+These preconditions are only necessary to be able to test the client against an actual instance of the pfcon server and run the automated tests.
 
 Install latest Docker
 =====================
@@ -166,11 +164,7 @@ Development and testing
 Optionally setup a virtual environment
 ======================================
 
-Install ``virtualenv`` and ``virtualenvwrapper``
-
-.. code-block:: bash
-
-    $> pip3 install -U virtualenv virtualenvwrapper
+Install ``virtualenv`` and ``virtualenvwrapper`` using your OS package manager.
 
 Create a directory for your virtual environments e.g.:
 
@@ -178,18 +172,19 @@ Create a directory for your virtual environments e.g.:
 
     $> mkdir ~/Python_Envs
 
-You might want to add the following two lines to your ``.bashrc`` file:
+You might want to add the following lines to your ``.bashrc`` or ``.zshrc`` file:
 
 .. code-block:: bash
 
+    VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3
     export WORKON_HOME=~/Python_Envs
     source /usr/local/bin/virtualenvwrapper.sh
 
-Then source your ``.bashrc`` and create a new Python3 virtual environment:
+Then source the file and create a new Python3 virtual environment:
 
 .. code-block:: bash
 
-    $> mkvirtualenv --python=python3 pfcon_client_env
+    $> mkvirtualenv pfcon_client_env
 
 To activate pfcon_client_env:
 
@@ -210,8 +205,6 @@ Clone the repo
 .. code-block:: bash
 
     $> git clone https://github.com/FNNDSC/python-pfconclient.git
-    $> cd python-pfconclient
-    $> workon pfcon_client_env
 
 
 Run automated tests
@@ -221,5 +214,5 @@ Run automated tests
 
     $> cd python-pfconclient
     $> workon pfcon_client_env
-    $> pip install -U nose
-    $> python setup.py nosetests
+    $> pip install -e ".[dev]"
+    $> pytest

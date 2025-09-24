@@ -8,6 +8,7 @@ import time
 import zipfile
 import json
 import requests
+
 from .exceptions import PfconRequestException, PfconRequestInvalidTokenException
 
 
@@ -54,6 +55,7 @@ class Client(object):
 
         # poll for job's execution status using exponential backoff retries
         status = self.poll_job_status(job_id, timeout)
+
         if status == 'finishedSuccessfully':
             print(f'\nDownloading and unpacking job {job_id} files...')
             self.get_job_files(job_id, output_dir, timeout)
@@ -62,6 +64,7 @@ class Client(object):
             print(f'Job {job_id} finished with errors')
         else:
             print(f'Job {job_id} finished with unexpected status: {status}')
+
         print(f'\nDeleting job {job_id} from the remote...')
         self.delete_job(job_id, timeout)
         print('Done')
@@ -92,13 +95,16 @@ class Client(object):
         wait_time = self.initial_wait
         poll_num = 1
         status = 'undefined'
+
         while self.max_wait >= wait_time:
             print(f'Waiting for {wait_time}s before next polling for job status ...\n')
             time.sleep(wait_time)
+
             print(f'Polling job {job_id} status, poll number: {poll_num}')
             d_resp = self.get_job_status(job_id, timeout)
             status = d_resp['compute']['status']
             print(f'Job {job_id} status: {status}')
+
             if status in ('undefined', 'finishedSuccessfully', 'finishedWithError'):
                 break
             else:
@@ -116,6 +122,7 @@ class Client(object):
         if not self.pfcon_innetwork:
             raise PfconRequestException('JSON data is only available for PFCON server '
                                         'operating in-network')
+
         url = self.url + 'jobs/' + job_id + '/file/?job_output_path=' + job_output_path
         resp = self.get(url, timeout)
         json_content = self.get_data_from_response(resp)
@@ -128,8 +135,10 @@ class Client(object):
         """
         if not os.path.exists(local_dir):
             os.makedirs(local_dir)
+
         json_content = self.get_job_json_data(job_id, job_output_path, timeout)
         fpath = os.path.join(local_dir, job_id + '.json')
+
         with open(fpath, 'w') as f:
             json.dump(json_content, f)
 
@@ -148,8 +157,10 @@ class Client(object):
         """
         if not os.path.exists(local_dir):
             os.makedirs(local_dir)
+
         zip_content = self.get_job_zip_data(job_id, timeout)
         fpath = os.path.join(local_dir, job_id + '.zip')
+
         with open(fpath, 'wb') as f:
             f.write(zip_content)
 
@@ -159,15 +170,19 @@ class Client(object):
         """
         zip_content = self.get_job_zip_data(job_id, timeout)
         memory_zip_file = io.BytesIO(zip_content)
+
         with zipfile.ZipFile(memory_zip_file, 'r', zipfile.ZIP_DEFLATED) as job_data_zip:
             filenames = job_data_zip.namelist()
             print(f'Number of files to decompress at {local_dir}: {len(filenames)}')
+
             for fname in filenames:
                 content = job_data_zip.read(fname)
                 fpath = os.path.join(local_dir, fname.lstrip('/'))
                 fpath_basedir = os.path.dirname(fpath)
+
                 if not os.path.exists(fpath_basedir):
                     os.makedirs(fpath_basedir)
+
                 with open(fpath, 'wb') as f:
                     f.write(content)
 
@@ -177,10 +192,11 @@ class Client(object):
         """
         url = self.url + 'jobs/' + job_id + '/'
         resp = self.delete(url, timeout)
+
         if resp.status_code != 204:
             if resp.status_code == 401:
-                raise PfconRequestInvalidTokenException(resp.text)
-            raise PfconRequestException(resp.text)
+                raise PfconRequestInvalidTokenException(resp.text, code=resp.status_code)
+            raise PfconRequestException(resp.text, code=resp.status_code)
 
     def get(self, url, timeout=30):
         """
@@ -199,12 +215,14 @@ class Client(object):
         Make a POST request to pfcon.
         """
         headers = {'Authorization': 'Bearer ' + self.auth_token}
+
         if data_file is None:
             headers['Content-Type'] = 'application/json'
             files = None
         else:
             # this is a multipart request
             files = {'data_file': data_file}
+
         try:
             r = requests.post(url, files=files, data=data,
                               headers={'Authorization': 'Bearer ' + self.auth_token},
@@ -237,6 +255,9 @@ class Client(object):
                               timeout=timeout)
         except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
             raise PfconRequestException(str(e))
+
+        if r.status_code != 200:
+            raise PfconRequestException(r.text, code=r.status_code)
         return r.json().get('token')
 
     @staticmethod
@@ -246,8 +267,10 @@ class Client(object):
         """
         if response.status_code not in (200, 201):
             if response.status_code == 401:
-                raise PfconRequestInvalidTokenException(response.text)
-            raise PfconRequestException(response.text)
+                raise PfconRequestInvalidTokenException(response.text,
+                                                        code=response.status_code)
+            raise PfconRequestException(response.text, code=response.status_code)
+
         if content_type == 'application/json':
             data = response.json()
         else:
@@ -261,12 +284,15 @@ class Client(object):
         """
         if not os.path.isdir(local_dir):
             raise ValueError(f'Invalid local input dir: {local_dir}')
+
         memory_zip_file = io.BytesIO()
+
         with zipfile.ZipFile(memory_zip_file, 'w', zipfile.ZIP_DEFLATED) as job_data_zip:
             for root, dirs, files in os.walk(local_dir):
                 for filename in files:
                     local_file_path = os.path.join(root, filename)
                     arc_path = local_file_path.replace(local_dir, '', 1).lstrip('/')
                     job_data_zip.write(local_file_path, arcname=arc_path)
+
         memory_zip_file.seek(0)
         return memory_zip_file

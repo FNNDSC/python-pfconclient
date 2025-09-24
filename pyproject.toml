@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-pfconclient"
+version = "3.2.0"
+authors = [
+  { name = "FNNDSC", email = "dev@babymri.org" },
+]
+description = "(Python) client for the Pfcon API"
+readme = "README.rst"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+dependencies = [
+  "requests>=2.27.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/FNNDSC/python-pfconclient"
+
+[project.scripts]
+pfconclient = "pfconclient.__main__:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
