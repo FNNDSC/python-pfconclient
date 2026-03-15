@@ -7,10 +7,9 @@
 #                        dev@babyMRI.org
 #
 
-import os
 from argparse import ArgumentParser
 
-from .client import Client
+from .client import Client, JobType
 
 
 parser = ArgumentParser(description='Manage pfcon service resources')
@@ -26,89 +25,48 @@ parser_auth = subparsers.add_parser('auth', help='get an auth token')
 parser_auth.add_argument('--pfcon_user', help="pfcon user", required=True)
 parser_auth.add_argument('--pfcon_password', help="pfcon user's password", required=True)
 
-# create the parser for the "run" command
-parser_run = subparsers.add_parser('run', help='run a new job until finished')
-parser_run.add_argument('inputdir', help="job input directory")
-parser_run.add_argument('outputdir', help="job output directory")
-run_req_group = parser_run.add_argument_group('required job API parameters')
-run_req_group.add_argument('--jid', help="job id", required=True)
-run_req_group.add_argument('--args', help='cmd arguments string', required=True)
-run_req_group.add_argument('--auid', help='user id', required=True)
-run_req_group.add_argument('--number_of_workers', help='number of workers',
-                              required=True)
-run_req_group.add_argument('--cpu_limit', help='cpu limit', required=True)
-run_req_group.add_argument('--memory_limit', help='memory limit', required=True)
-run_req_group.add_argument('--gpu_limit', help='gpu limit', required=True)
-run_req_group.add_argument('--image', help='docker image', required=True)
-run_req_group.add_argument('--selfexec',
-                           help='executable file name within the docker image',
-                           required=True)
-run_req_group.add_argument('--selfpath',
-                           help='path to executable file within the docker image',
-                           required=True)
-run_req_group.add_argument('--execshell',
-                           help='execution shell within the docker image',
-                           required=True)
-run_req_group.add_argument('--type', help='plugin type', choices=['fs', 'ds'],
-                           required=True)
-run_opt_group = parser_run.add_argument_group('optional job API parameters')
-run_opt_group.add_argument('--args_path_flags',
-                           help='comma separated list of cmd flags with path argument')
-parser_run.add_argument('--poll_initial_wait',
-                        help='initial wait time in seconds to poll for job status')
-parser_run.add_argument('--poll_max_wait',
-                        help='maximum wait time in seconds to poll for job status')
-
 # create the parser for the "submit" command
 parser_submit = subparsers.add_parser('submit', help='submit a new job')
-parser_submit.add_argument('inputdir', help="job input directory")
-submit_req_group = parser_submit.add_argument_group('required job API parameters')
-submit_req_group.add_argument('--jid', help="job id", required=True)
-submit_req_group.add_argument('--args', help='cmd arguments string', required=True)
-submit_req_group.add_argument('--auid', help='user id', required=True)
-submit_req_group.add_argument('--number_of_workers', help='number of workers', required=True)
-submit_req_group.add_argument('--cpu_limit', help='cpu limit', required=True)
-submit_req_group.add_argument('--memory_limit', help='memory limit', required=True)
-submit_req_group.add_argument('--gpu_limit', help='gpu limit', required=True)
-submit_req_group.add_argument('--image', help='docker image', required=True)
-submit_req_group.add_argument('--selfexec',
-                              help='executable file name within the docker image',
-                              required=True)
-submit_req_group.add_argument('--selfpath',
-                              help='path to executable file within the docker image',
-                              required=True)
-submit_req_group.add_argument('--execshell',
-                              help='execution shell within the docker image',
-                              required=True)
-submit_req_group.add_argument('--type', help='plugin type', choices=['fs', 'ds'],
-                              required=True)
-submit_opt_group = parser_submit.add_argument_group('optional job API parameters')
-submit_opt_group.add_argument('--args_path_flags',
-                              help='comma separated list of cmd flags with path argument')
+parser_submit.add_argument('--job_type', choices=['copy', 'plugin', 'upload', 'delete'],
+                           required=True, help='type of job to submit')
+parser_submit.add_argument('--jid', help="job id", required=True)
+parser_submit.add_argument('--input_dirs', nargs='+',
+                           help='input directories (repeatable)')
+parser_submit.add_argument('--output_dir', help='output directory')
+parser_submit.add_argument('--job_output_path', help='job output path (for upload jobs)')
+submit_plugin_group = parser_submit.add_argument_group('plugin job parameters')
+submit_plugin_group.add_argument('--entrypoint', nargs='+',
+                                 help='entrypoint command parts (e.g. python3 /usr/local/bin/simplefsapp)')
+submit_plugin_group.add_argument('--args', nargs='+', help='cmd arguments')
+submit_plugin_group.add_argument('--auid', help='user id')
+submit_plugin_group.add_argument('--number_of_workers', help='number of workers')
+submit_plugin_group.add_argument('--cpu_limit', help='cpu limit')
+submit_plugin_group.add_argument('--memory_limit', help='memory limit')
+submit_plugin_group.add_argument('--gpu_limit', help='gpu limit')
+submit_plugin_group.add_argument('--image', help='docker image')
+submit_plugin_group.add_argument('--type', help='plugin type', choices=['fs', 'ds', 'ts'])
 
 # create the parser for the "status" command
 parser_status = subparsers.add_parser('status', help='get the exec status of a job')
+parser_status.add_argument('--job_type', choices=['copy', 'plugin', 'upload', 'delete'],
+                           required=True, help='type of job')
 parser_status.add_argument('--jid', help="job id", required=True)
 
 # create the parser for the "poll" command
 parser_poll = subparsers.add_parser('poll',
                                     help='poll the exec status of a job until finished')
+parser_poll.add_argument('--job_type', choices=['copy', 'plugin', 'upload', 'delete'],
+                         required=True, help='type of job')
 parser_poll.add_argument('--jid', help="job id", required=True)
 parser_poll.add_argument('--poll_initial_wait',
                          help='initial wait time in seconds to poll for job status')
 parser_poll.add_argument('--poll_max_wait',
                          help='maximum wait time in seconds to poll for job status')
 
-# create the parser for the "download" command
-parser_download = subparsers.add_parser('download',
-                                        help="download job's output files")
-parser_download.add_argument('--jid', help="job id", required=True)
-parser_download.add_argument('outputdir', help="directory to download job's output files")
-parser_download.add_argument('--zip', action='store_true',
-                             help='save output files as a single zip file')
-
 # create the parser for the "delete" command
 parser_delete = subparsers.add_parser('delete', help='delete an existing job')
+parser_delete.add_argument('--job_type', choices=['copy', 'plugin', 'upload', 'delete'],
+                           required=True, help='type of job')
 parser_delete.add_argument('--jid', help="job id", required=True)
 
 
@@ -124,55 +82,55 @@ def main():
     else:
         cl = Client(args.url, args.auth_token)
 
-        if args.subparser_name == 'run' or args.subparser_name == 'submit':
-            d_job_descriptors = {
-                'entrypoint': [args.execshell, os.path.join(args.selfpath, args.selfexec)],
-                'args': args.args.split(),
-                'args_path_flags': args.args_path_flags if args.args_path_flags is not None else '',
-                'auid': args.auid,
-                'number_of_workers': args.number_of_workers,
-                'cpu_limit': args.cpu_limit,
-                'memory_limit': args.memory_limit,
-                'gpu_limit': args.gpu_limit,
-                'image': args.image,
-                'type': args.type
-            }
+        if args.subparser_name == 'submit':
+            job_type = JobType(args.job_type)
+            d_job_descriptors = {}
 
-            if args.subparser_name == 'run':
-                if args.poll_initial_wait:
-                    cl.initial_wait = args.poll_initial_wait
+            if args.input_dirs:
+                d_job_descriptors['input_dirs'] = args.input_dirs
+            if args.output_dir:
+                d_job_descriptors['output_dir'] = args.output_dir
+            if args.job_output_path:
+                d_job_descriptors['job_output_path'] = args.job_output_path
+            if args.entrypoint:
+                d_job_descriptors['entrypoint'] = args.entrypoint
+            if args.args:
+                d_job_descriptors['args'] = args.args
+            if args.auid:
+                d_job_descriptors['auid'] = args.auid
+            if args.number_of_workers:
+                d_job_descriptors['number_of_workers'] = args.number_of_workers
+            if args.cpu_limit:
+                d_job_descriptors['cpu_limit'] = args.cpu_limit
+            if args.memory_limit:
+                d_job_descriptors['memory_limit'] = args.memory_limit
+            if args.gpu_limit:
+                d_job_descriptors['gpu_limit'] = args.gpu_limit
+            if args.image:
+                d_job_descriptors['image'] = args.image
+            if args.type:
+                d_job_descriptors['type'] = args.type
 
-                if args.poll_max_wait:
-                    cl.max_wait = args.poll_max_wait
-                cl.run_job(args.jid, d_job_descriptors, args.inputdir, args.outputdir,
-                               timeout)
-            else:
-                # create job zip file content from local input_dir
-                job_zip_file = cl.create_zip_file(args.inputdir)
-                zip_content = job_zip_file.getvalue()
-                cl.submit_job(args.jid, d_job_descriptors, zip_content, timeout)
+            resp_data = cl.submit_job(job_type, args.jid, d_job_descriptors, timeout)
+            print(f'\n{resp_data}\n')
 
         elif args.subparser_name == 'status':
-            d_resp = cl.get_job_status(args.jid, timeout)
+            job_type = JobType(args.job_type)
+            d_resp = cl.get_job_status(job_type, args.jid, timeout)
             status = d_resp['compute']['status']
             print('\nJob %s status: %s' % (args.jid, status))
 
         elif args.subparser_name == 'poll':
+            job_type = JobType(args.job_type)
             if args.poll_initial_wait:
                 cl.initial_wait = args.poll_initial_wait
-
             if args.poll_max_wait:
                 cl.max_wait = args.poll_max_wait
-            cl.poll_job_status(args.jid, timeout)
-
-        elif args.subparser_name == 'download':
-            if args.zip:
-                cl.get_job_zip_file(args.jid, args.outputdir, timeout)
-            else:
-                cl.get_job_files(args.jid, args.outputdir, timeout)
+            cl.poll_job_status(job_type, args.jid, timeout)
 
         elif args.subparser_name == 'delete':
-            cl.delete_job(args.jid, timeout)
+            job_type = JobType(args.job_type)
+            cl.delete_job(job_type, args.jid, timeout)
             print('\nDeleted job %s' % args.jid)
 
 

@@ -8,7 +8,7 @@ A Python3 client for pfcon's web API.
     :alt: MIT License
     :target: https://github.com/FNNDSC/python-pfconclient/blob/master/LICENSE
 .. image:: https://badge.fury.io/py/python-pfconclient.svg
-    :target: https://badge.fury.io/py/python-pfconclient 
+    :target: https://badge.fury.io/py/python-pfconclient
 
 
 Overview
@@ -49,14 +49,14 @@ Open a terminal and run the following commands in any working directory:
 
     $> git clone https://github.com/FNNDSC/pfcon.git
     $> cd pfcon
-    $> ./make.sh  
+    $> ./make.sh -N -F fslink
 
 You can later remove all the backend containers with:
 
 .. code-block:: bash
 
     $> cd pfcon
-    $> ./unmake.sh
+    $> ./unmake.sh -N -F fslink
 
 
 Usage
@@ -69,52 +69,74 @@ Instantiate the client:
 
 .. code-block:: python
 
-    from pfconclient import client
+    from pfconclient.client import Client, JobType
 
-    token = client.Client.get_auth_token('http://localhost:30006/api/v1/auth-token/', 'pfcon', 'pfcon1234')
-    cl = client.Client('http://localhost:30006/api/v1/', token)
+    token = Client.get_auth_token('http://localhost:30006/api/v1/auth-token/', 'pfcon', 'pfcon1234')
+    cl = Client('http://localhost:30006/api/v1/', token)
 
 
-Run ``fs`` plugin until finished using any local input directory and get the resulting files in a local output directory:
+Example: full fslink flow with ``pl-simpledsapp``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This example assumes:
+
+- The pfcon server was started with ``./make.sh -N -F fslink``
+- pfcon is reachable at ``http://localhost:30006``
+- STOREBASE defaults to ``/home/user/pfcon_fork/CHRIS_REMOTE_FS``
+- Test data has been created under the storebase (see the concrete example in ``req_resp_flow.md`` for setup details)
 
 .. code-block:: python
 
-    job_descriptors = {
-        'args': ['--saveinputmeta', '--saveoutputmeta', '--dir', 'cube/uploads'],
-        'args_path_flags': ['--dir'],  # list of flags with arguments of type 'path' or 'unextpath'
-        'auid': 'cube',
-        'number_of_workers': 1,
-        'cpu_limit': 1000,
-        'memory_limit': 200,
-        'gpu_limit': 0,
-        'image': 'fnndsc/pl-simplefsapp',
-        'entrypoint': ['python3', '/usr/local/bin/simplefsapp'],
-        'type': 'fs'
+    job_id = 'chris-jid-2'
+
+    # Step 1: Submit copy job
+    copy_descriptors = {
+        'input_dirs': ['home/user/cube'],
+        'output_dir': 'home/user/cube_out',
     }
-    job_id = 'chris-jid-1'
-    inputdir = '/tmp/sbin/in'
-    outputdir = '/tmp/sbin/out/chris-jid-1'
-    cl.run_job(job_id, job_descriptors, inputdir, outputdir)
+    cl.submit_job(JobType.COPY, job_id, copy_descriptors)
 
-Run ``ds`` plugin until finished using the local output directory of a previous plugin as its input directory and get the resulting files in a local output directory:
+    # Step 2: Poll copy status until finished
+    cl.poll_job_status(JobType.COPY, job_id)
 
-.. code-block:: python
-
-    job_descriptors = {
-        'args': ['--saveinputmeta', '--saveoutputmeta', '--prefix', 'lolo'],
+    # Step 3: Submit plugin job
+    plugin_descriptors = {
+        'entrypoint': ['python3', '/usr/local/bin/simpledsapp'],
+        'args': ['--prefix', 'le'],
         'auid': 'cube',
         'number_of_workers': 1,
         'cpu_limit': 1000,
         'memory_limit': 200,
         'gpu_limit': 0,
         'image': 'fnndsc/pl-simpledsapp',
-        'entrypoint': ['python3', '/usr/local/bin/simpledsapp'],
-        'type': 'ds'
+        'type': 'ds',
+        'input_dirs': ['home/user/cube'],
+        'output_dir': 'home/user/cube_out',
     }
-    job_id = 'chris-jid-2'
-    inputdir = '/tmp/sbin/out/chris-jid-1'
-    outputdir = '/tmp/sbin/out/chris-jid-2'
-    cl.run_job(job_id, job_descriptors, inputdir, outputdir)
+    cl.submit_job(JobType.PLUGIN, job_id, plugin_descriptors)
+
+    # Step 4: Poll plugin status until finished
+    cl.poll_job_status(JobType.PLUGIN, job_id)
+
+    # Step 5: Get output file metadata
+    resp = cl.get_plugin_job_json_data(job_id, 'home/user/cube_out')
+    print(resp['rel_file_paths'])
+
+    # Step 6: Submit upload job (no-op for fslink)
+    upload_descriptors = {
+        'job_output_path': 'home/user/cube_out',
+    }
+    cl.submit_job(JobType.UPLOAD, job_id, upload_descriptors)
+
+    # Step 7: Submit delete job and poll until finished
+    cl.submit_job(JobType.DELETE, job_id, {})
+    cl.poll_job_status(JobType.DELETE, job_id)
+
+    # Step 8: Remove all containers
+    cl.delete_job(JobType.COPY, job_id)
+    cl.delete_job(JobType.PLUGIN, job_id)
+    cl.delete_job(JobType.DELETE, job_id)
+
 
 Visit the `Python programmatic interface`_ wiki page to learn more about the client's programmatic API.
 
@@ -124,38 +146,86 @@ Visit the `Python programmatic interface`_ wiki page to learn more about the cli
 Standalone CLI client tool
 ==========================
 
-Get and print auth token with the `auth` subcommand:
+Get and print auth token with the ``auth`` subcommand:
 
 .. code-block:: bash
 
     $> pfconclient http://localhost:30006/api/v1/ auth --pfcon_user pfcon --pfcon_password pfcon1234
 
 
-Run ``fs`` plugin until finished using any local input directory and get the resulting files in a local output directory:
+Submit a copy job:
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:30006/api/v1/ -a <token> run --jid chris-jid-3 --args '--saveinputmeta --saveoutputmeta --dir cube/uploads' --args_path_flags='--dir' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simplefsapp --selfexec simplefsapp --selfpath /usr/local/bin --execshell python3 --type fs /tmp/sbin/in /tmp/sbin/out/chris-jid-3
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> submit --job_type copy --jid chris-jid-2 --input_dirs home/user/cube --output_dir home/user/cube_out
 
 
-Run ``ds`` plugin until finished using the local output directory of a previous plugin as its input directory and get the resulting files in a local output directory:
+Poll copy job status:
 
 .. code-block:: bash
 
-    $> pfconclient http://localhost:30006/api/v1/ -a <token> run --jid chris-jid-4 --args '--saveinputmeta --saveoutputmeta --prefix lolo' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --selfexec simpledsapp --selfpath /usr/local/bin --execshell python3 --type ds /tmp/sbin/out/chris-jid-3 /tmp/sbin/out/chris-jid-4
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> poll --job_type copy --jid chris-jid-2
+
+
+Submit a ``ds`` plugin job:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> submit --job_type plugin --jid chris-jid-2 --entrypoint python3 /usr/local/bin/simpledsapp --args '--prefix le' --auid cube --number_of_workers 1 --cpu_limit 1000 --memory_limit 200 --gpu_limit 0 --image fnndsc/pl-simpledsapp --type ds --input_dirs home/user/cube --output_dir home/user/cube_out
+
+
+Poll plugin job status:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> poll --job_type plugin --jid chris-jid-2
+
+
+Get plugin job status:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> status --job_type plugin --jid chris-jid-2
+
+
+Delete a copy job's container:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> delete --job_type copy --jid chris-jid-2
+
+
+Delete a plugin job's container:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> delete --job_type plugin --jid chris-jid-2
+
+
+Submit a delete job:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> submit --job_type delete --jid chris-jid-2
+
+
+Poll delete job status:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> poll --job_type delete --jid chris-jid-2
+
+
+Delete a delete job's container:
+
+.. code-block:: bash
+
+    $> pfconclient http://localhost:30006/api/v1/ -a <token> delete --job_type delete --jid chris-jid-2
 
 
 Visit the `standalone CLI client`_ wiki page to learn more about the CLI client.
 
 .. _`standalone CLI client`: https://github.com/FNNDSC/python-pfconclient/wiki/Standalone-CLI-client-tool
-
-
-Arguments of type ``path`` or ``unextpath``
-===========================================
-
-If a plugin's ``args`` list contains flags with arguments of type ``path`` or ``unextpath`` then those flags should be included
-in the optional ``args_path_flags`` list. This string represents a list of flags. This way ``pfcon`` server will
-know that it has to substitute the local path specified by the flag by an actual path in the cloud.
 
 
 Development and testing
