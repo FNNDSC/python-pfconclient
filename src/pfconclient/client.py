@@ -29,6 +29,8 @@ class Client(object):
         self.url = url
         self.set_auth_token(auth_token)
         self.pfcon_innetwork = None
+        self.requires_copy_job = None
+        self.requires_upload_job = None
 
         # initial and maximum wait time (seconds) for exponential-backoff-based retries
         self.initial_wait = 2
@@ -47,6 +49,8 @@ class Client(object):
         resp = self.get(url, timeout)
         data = self.get_data_from_response(resp)
         self.pfcon_innetwork = data.get('pfcon_innetwork')
+        self.requires_copy_job = data.get('requires_copy_job')
+        self.requires_upload_job = data.get('requires_upload_job')
         return data
 
     def submit_job(self, job_type: JobType, job_id: str, d_job_descriptors: dict,
