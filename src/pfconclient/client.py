@@ -26,11 +26,11 @@ class Client(object):
     """
 
     def __init__(self, url: str, auth_token: str):
-        self.url = url
+        self.url: str = url
         self.set_auth_token(auth_token)
-        self.pfcon_innetwork = None
-        self.requires_copy_job = None
-        self.requires_upload_job = None
+        self.pfcon_innetwork: bool | None = None
+        self.requires_copy_job: bool | None = None
+        self.requires_upload_job: bool | None = None
 
         # initial and maximum wait time (seconds) for exponential-backoff-based retries
         self.initial_wait = 2
@@ -54,7 +54,7 @@ class Client(object):
         return data
 
     def submit_job(self, job_type: JobType, job_id: str, d_job_descriptors: dict,
-                   data_file: io.BytesIO = None, timeout: int = 1000) -> dict:
+                   data_file: io.BytesIO | None = None, timeout: int = 1000) -> dict:
         """
         Submit a new job. When pfcon is not in-network, a zip data_file can be
         included as a multipart upload.
@@ -189,7 +189,7 @@ class Client(object):
                 raise PfconRequestInvalidTokenException(resp.text, code=resp.status_code)
             raise PfconRequestException(resp.text, code=resp.status_code)
 
-    def get(self, url, timeout=30):
+    def get(self, url: str, timeout: int = 30) -> requests.Response:
         """
         Make a GET request to pfcon.
         """
@@ -201,7 +201,8 @@ class Client(object):
             raise PfconRequestException(str(e))
         return r
 
-    def post(self, url, data, data_file=None, timeout=30):
+    def post(self, url: str, data: dict, data_file: io.BytesIO | None = None, 
+             timeout: int = 30) -> requests.Response:
         """
         Make a POST request to pfcon.
         """
@@ -220,7 +221,7 @@ class Client(object):
             raise PfconRequestException(str(e))
         return r
 
-    def delete(self, url, timeout=30):
+    def delete(self, url: str, timeout: int = 30) -> requests.Response:
         """
         Make a DELETE request to pfcon.
         """
@@ -249,7 +250,8 @@ class Client(object):
                 raise ValueError(f'Unsupported job type: {job_type}')
 
     @staticmethod
-    def get_auth_token(pfcon_auth_url, pfcon_user, pfcon_password, timeout=30):
+    def get_auth_token(pfcon_auth_url: str, pfcon_user: str, pfcon_password: str, 
+                       timeout: int = 30) -> str:
         """
         Make a POST request to obtain an auth token.
         """
@@ -266,7 +268,8 @@ class Client(object):
         return r.json().get('token')
 
     @staticmethod
-    def get_data_from_response(response, content_type='application/json'):
+    def get_data_from_response(response: requests.Response, 
+                               content_type: str = 'application/json'):
         """
         Static method to get the data dictionary from a response object.
         """
