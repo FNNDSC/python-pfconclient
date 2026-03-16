@@ -35,7 +35,7 @@ Install latest Docker
 
 Currently tested platforms:
 
-- Ubuntu 18.04+ and MAC OS X 11.1+
+- Ubuntu 20.04+ and MAC OS X 12+
 
 Note: On a Linux machine make sure to add your computer user to the ``docker`` group.
 Consult this page https://docs.docker.com/engine/install/linux-postinstall/
